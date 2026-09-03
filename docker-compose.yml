@@ -1,0 +1,47 @@
+services:
+  app:
+    build: .
+    image: dev-team-hub:latest
+    container_name: dev-team-hub
+    restart: unless-stopped
+    ports:
+      - "4000:4000"
+    # Secretos y flags de integración. Arrancar copiando server/.env.example.
+    # Importante: definir TZ ahí — con el contenedor en UTC, la rotación de
+    # facilitador se corre un día a partir de cierta hora local.
+    env_file:
+      - ./server/.env
+    environment:
+      NODE_ENV: production
+      PORT: "4000"
+
+# Hoy la app no necesita volumen: el store es en memoria (se pierde al
+# reiniciar). Cuando entre la base de datos, según lo que se decida:
+#
+#   - SQLite -> montar un volumen para el archivo .db:
+#       volumes:
+#         - dth-data:/data
+#       environment:
+#         DATABASE_URL: /data/dev-team-hub.db
+#
+#   - MySQL -> si vive en otro server, alcanza con las credenciales en .env.
+#     Para levantarlo acá al lado:
+#
+#   db:
+#     image: mysql:8.4
+#     restart: unless-stopped
+#     environment:
+#       MYSQL_DATABASE: devteamhub
+#       MYSQL_USER: devteamhub
+#       MYSQL_PASSWORD: ${DB_PASSWORD:?falta DB_PASSWORD}
+#       MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:?falta DB_ROOT_PASSWORD}
+#     volumes:
+#       - dth-db:/var/lib/mysql
+#     healthcheck:
+#       test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+#       interval: 10s
+#       retries: 5
+#
+# volumes:
+#   dth-data:
+#   dth-db:

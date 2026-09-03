@@ -1,0 +1,15 @@
+{
+  "_doc": "Roster del equipo. Copiá este archivo a roster.json (gitignoreado) con tu gente real, o apuntá ROSTER_FILE a otra ruta. Sin roster.json la app usa este de ejemplo. email se deriva de <login>@<emailDomain> salvo que la persona traiga email propio. facilitatorOverrides fija facilitador a mano por fecha (YYYY-MM-DD -> login).",
+  "emailDomain": "example.com",
+  "people": [
+    { "login": "adalovelace", "name": "Ada Lovelace", "role": "lead" },
+    { "login": "gracehopper", "name": "Grace Hopper" },
+    { "login": "alanturing", "name": "Alan Turing" },
+    { "login": "edsgerdijkstra", "name": "Edsger Dijkstra" },
+    { "login": "dennisritchie", "name": "Dennis Ritchie" },
+    { "login": "katherinejohnson", "name": "Katherine Johnson" },
+    { "login": "johnbackus", "name": "John Backus" },
+    { "login": "joanclarke", "name": "Joan Clarke" }
+  ],
+  "facilitatorOverrides": {}
+}

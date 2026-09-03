@@ -1,0 +1,9 @@
+node_modules/
+dist/
+.env
+*.log
+.DS_Store
+
+# Datos internos del despliegue propio: no se versionan.
+server/roster.json
+docs/INTERNO.md

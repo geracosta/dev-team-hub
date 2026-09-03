@@ -1,0 +1,14 @@
+# Todo se instala y compila dentro de la imagen: lo de la máquina local sobra
+# y además rompe la cache (node_modules de Windows en una imagen Linux).
+**/node_modules
+**/dist
+**/.env
+**/*.log
+
+.git
+.gitignore
+docs
+README.md
+Dockerfile
+.dockerignore
+docker-compose.yml
