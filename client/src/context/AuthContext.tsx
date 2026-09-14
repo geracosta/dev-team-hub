@@ -11,6 +11,8 @@ interface AuthState {
   user: PublicUser | null;
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
+  /** Login con un JWT ya emitido (vuelta del OAuth de Gitea). */
+  loginWithToken: (token: string) => Promise<void>;
   logout: () => void;
 }
 
@@ -39,13 +41,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(data.user);
   };
 
+  const loginWithToken = async (token: string) => {
+    localStorage.setItem('token', token);
+    try {
+      const { data } = await api.get('/auth/me');
+      setUser(data.user);
+    } catch (err) {
+      localStorage.removeItem('token');
+      throw err;
+    }
+  };
+
   const logout = () => {
     localStorage.removeItem('token');
     setUser(null);
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout }}>
+    <AuthContext.Provider value={{ user, loading, login, loginWithToken, logout }}>
       {children}
     </AuthContext.Provider>
   );

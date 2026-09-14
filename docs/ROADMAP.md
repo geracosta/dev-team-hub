@@ -39,19 +39,20 @@ Pendiente de esta entrega: activar Jira cargando `JIRA_EMAIL` /
 - Cambio manual de turno (el lead, o quien tiene el turno para cederlo).
 - Detalle en [DAILY.md](./DAILY.md#rotación-del-facilitador).
 
-## 🔭 Entrega 3 — Persistencia y métricas avanzadas
-- Base de datos (Postgres/SQLite) en vez del store en memoria: hoy cada reinicio
-  pierde dailies, eventos del calendario y mapeo de identidades, y obliga a
-  re-sincronizar Gitea.
+## ✅ Entrega 3 — Login real + persistencia
+- **Login con Gitea (OAuth2)**: la identidad la da Gitea (con su 2FA), entra
+  quien está en el roster y el rol lo da `roster.json`. El modo demo queda como
+  fallback opcional (`AUTH_DEMO_MODE`).
+- **SQLite** (better-sqlite3) en vez del store en memoria: dailies, calendario
+  e identidades confirmadas sobreviven a los reinicios. Esquema clave→JSON
+  espejado en Maps (`data/db.ts`), volumen `dth-data` en Docker.
+
+## 🔭 Entrega 4 — Métricas avanzadas y pulido
 - Congelar las asignaciones de facilitador ya publicadas: hoy sumar o quitar
   gente del roster reacomoda los turnos futuros.
 - Histórico de snapshots para ver tendencias más allá de la ventana configurada.
 - Iteraciones de review y tasa de revert/reopen.
 - Registro y reportes de métricas de daily (asistencia, puntualidad, barreras).
-
-## 🔮 Entrega 4 — Pulido
-- SSO/LDAP corporativo en vez de usuarios de ejemplo (hoy la password es la
-  misma para todos: es un scaffold, no sirve para uso real).
 - Notificaciones (recordatorio de pre-update antes de la daily).
 - Vista de barreras agregadas del área (panel del facilitador).
 - Tests e2e y CI en Gitea Actions.

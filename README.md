@@ -24,9 +24,10 @@ calendario de facilitadores.
 ## Stack
 
 - **Frontend:** React 18 + Vite + TypeScript + React Router + Recharts
-- **Backend:** Node + Express + TypeScript
+- **Backend:** Node + Express + TypeScript + SQLite (better-sqlite3)
 - **Integraciones:** Gitea API (PRs/reviews), Jira API (comentarios, validación de tickets)
-- **Auth:** JWT (scaffold con usuarios de ejemplo; reemplazable por SSO/LDAP)
+- **Auth:** login con Gitea (OAuth2) + JWT propio; modo demo con usuarios de
+  ejemplo para probar sin configurar nada
 
 > La app corre con **datos mock** out-of-the-box. Las integraciones reales con
 > Gitea y Jira se activan completando `server/.env` (ver `.env.example`).
@@ -67,8 +68,9 @@ docker compose up -d --build
 
 Abrí http://localhost:4000. Logs con `docker compose logs -f`, apagar con
 `docker compose down`. Importante definir `TZ` en `server/.env`: la rotación de
-facilitador usa la fecha local. El store es en memoria: los datos cargados se
-pierden al reiniciar el contenedor. Más detalle en [docs/DOCKER.md](./docs/DOCKER.md).
+facilitador usa la fecha local. Los datos (dailies, calendario, identidades)
+van a una base SQLite en el volumen `dth-data`, así que sobreviven a reinicios
+y rebuilds. Más detalle en [docs/DOCKER.md](./docs/DOCKER.md).
 
 ### En desarrollo (sin Docker)
 
@@ -119,7 +121,26 @@ consume número). Son un dato de color para el equipo; no alimentan métricas.
 
 ## Integraciones
 
-### Gitea
+### Login con Gitea (OAuth2)
+
+El login real delega la identidad en Gitea: la persona se autentica ahí (con
+su 2FA si tiene) y entra si su login figura en el roster; el rol lo da
+`roster.json`. Para activarlo, registrá una app OAuth2 en Gitea (Configuración
+→ Aplicaciones) con redirect URI `<PUBLIC_URL>/api/auth/gitea/callback` y
+completá:
+
+```env
+PUBLIC_URL=https://tu-hub.example.com
+GITEA_OAUTH_CLIENT_ID=<client id>
+GITEA_OAUTH_CLIENT_SECRET=<client secret>
+AUTH_DEMO_MODE=false     # apaga las cuentas de ejemplo (y su password)
+```
+
+Mientras `AUTH_DEMO_MODE=true`, conviven el botón "Entrar con Gitea" y las
+cuentas demo — útil para probar. Con el OAuth configurado y el modo demo en
+`false`, el login por password queda deshabilitado del todo.
+
+### Métricas desde Gitea
 
 ```env
 GITEA_ENABLED=true
@@ -171,11 +192,9 @@ Detalle y casos borde en
 ## Estado
 
 Integraciones reales de Gitea y Jira + mapeo de identidades, verificadas contra
-servidores reales (Gitea 1.21, Jira Cloud), más rotación de facilitador y
-calendario del equipo. Ver [docs/ROADMAP.md](./docs/ROADMAP.md) para lo que
-sigue — lo más importante: el store todavía es en memoria y la auth es de
-scaffold (password compartida), así que falta persistencia y SSO/LDAP antes de
-un uso serio.
+servidores reales (Gitea 1.21, Jira Cloud), rotación de facilitador y
+calendario del equipo, login OAuth2 contra Gitea y persistencia en SQLite.
+Ver [docs/ROADMAP.md](./docs/ROADMAP.md) para lo que sigue.
 
 ## Licencia
 

@@ -1,7 +1,7 @@
 import { env, jiraEnabled } from '../config/env.js';
 import { giteaGetAll, describeError } from './giteaApi.js';
 import { searchUsers } from './jira.js';
-import { users } from '../data/store.js';
+import { users, persistIdentity } from '../data/store.js';
 import type { IdentitySuggestion, User } from '../types.js';
 
 /**
@@ -153,5 +153,6 @@ export function applyMapping(
     user.jiraAccountId = patch.jiraAccountId || undefined;
     user.jiraMatch = patch.jiraAccountId ? 'manual' : 'none';
   }
+  persistIdentity(user); // sobrevive a los reinicios, le gana al roster
   return user;
 }

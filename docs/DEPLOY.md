@@ -43,8 +43,10 @@ del área, no.
 ## 1. Buildear en la máquina de desarrollo
 
 En el server **no** se compila: Vite 5 y `tsc` piden Node 18+, y `npm install`
-sobre 2012 pelea con TLS viejo. Además ninguna dependencia es nativa (todo JS
-puro), así que `node_modules` se copia tal cual entre máquinas.
+sobre 2012 pelea con TLS viejo. Ojo: desde que entró SQLite hay una dependencia
+**nativa** (`better-sqlite3`), así que el `node_modules` que se copia tiene que
+armarse con el **mismo Node mayor y arquitectura** que va a correr en el server
+(el binario compilado es por ABI de Node; si no coincide, el server no arranca).
 
 ```powershell
 cd <repo>\server
@@ -143,13 +145,20 @@ pública del sitio.
 PORT=4000
 JWT_SECRET=<string largo y random>       # el default es 'dev-secret-change-me'
 CLIENT_ORIGIN=http://<host>:4000
+PUBLIC_URL=http://<host>:4000            # base del redirect_uri del login
 AUTH_DEMO_MODE=false
 TZ=<zona horaria del equipo>
+# DATABASE_PATH=<ruta del .db>           # default: junto al server
 
 GITEA_ENABLED=true
 GITEA_BASE_URL=https://<tu-gitea>
 GITEA_TOKEN=<token>
 GITEA_REPOS=<org/repo1,org/repo2,...>
+
+# Login real: app OAuth2 registrada en Gitea con redirect
+# <PUBLIC_URL>/api/auth/gitea/callback (ver README).
+GITEA_OAUTH_CLIENT_ID=<client id>
+GITEA_OAUTH_CLIENT_SECRET=<client secret>
 
 JIRA_ENABLED=false
 JIRA_WRITE_ENABLED=false
@@ -210,14 +219,12 @@ viejo no rompe la conexión.
 
 ## 9. Lo que hay que saber antes de dejarlo prendido
 
-- **El store es en memoria.** Pre-updates, comentarios de la daily y eventos de
-  calendario viven en RAM (`server/src/data/store.ts`): reiniciar el servicio
-  los borra. La rotación de facilitador y el número de daily sobreviven porque
-  se calculan desde las anclas, no se guardan. Si la daily se va a correr en
-  serio desde acá, esto pide una base de datos (ver [ROADMAP](./ROADMAP.md)).
-- **La auth es de scaffold.** Password `demo` en texto plano, igual para todo el
-  equipo, JWT de 12 h. En una app que muestra métricas de Gitea y escribe en
-  Jira, es lo primero a reemplazar por SSO/LDAP.
+- **Los datos viven en un archivo SQLite** (`DATABASE_PATH`, por defecto junto
+  al server). Backupear ese archivo es backupear la app; excluirlo de borrados
+  de limpieza.
+- **Con OAuth configurado y `AUTH_DEMO_MODE=false`, el login es real** (Gitea,
+  con su 2FA). Si el modo demo queda prendido, la password `demo` compartida
+  sigue activa — apagarlo en cualquier deploy alcanzable por terceros.
 - **El `.env` queda con el token de Gitea en texto plano.** Restringí la carpeta
   por NTFS a la cuenta del servicio y a los admins.
 - **`JIRA_WRITE_ENABLED=true` comenta en tickets reales.** Dejalo en `false`

@@ -14,34 +14,10 @@ services:
     environment:
       NODE_ENV: production
       PORT: "4000"
+      # La base SQLite va al volumen: sobrevive a rebuilds y reinicios.
+      DATABASE_PATH: /data/dev-team-hub.db
+    volumes:
+      - dth-data:/data
 
-# Hoy la app no necesita volumen: el store es en memoria (se pierde al
-# reiniciar). Cuando entre la base de datos, según lo que se decida:
-#
-#   - SQLite -> montar un volumen para el archivo .db:
-#       volumes:
-#         - dth-data:/data
-#       environment:
-#         DATABASE_URL: /data/dev-team-hub.db
-#
-#   - MySQL -> si vive en otro server, alcanza con las credenciales en .env.
-#     Para levantarlo acá al lado:
-#
-#   db:
-#     image: mysql:8.4
-#     restart: unless-stopped
-#     environment:
-#       MYSQL_DATABASE: devteamhub
-#       MYSQL_USER: devteamhub
-#       MYSQL_PASSWORD: ${DB_PASSWORD:?falta DB_PASSWORD}
-#       MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:?falta DB_ROOT_PASSWORD}
-#     volumes:
-#       - dth-db:/var/lib/mysql
-#     healthcheck:
-#       test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
-#       interval: 10s
-#       retries: 5
-#
-# volumes:
-#   dth-data:
-#   dth-db:
+volumes:
+  dth-data:

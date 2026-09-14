@@ -82,13 +82,16 @@ el mismo origen que la API, así que CORS no entra en juego.
 
 ## Datos
 
-Hoy **no hay volumen y no hace falta**: el store es en memoria, así que
-`docker compose restart` borra pre-updates, comentarios y eventos de
-calendario. La rotación y el número de daily sobreviven porque se calculan
-desde las anclas.
+La app persiste en **SQLite** (dailies, eventos de calendario, identidades
+confirmadas). En el compose la base vive en el volumen `dth-data`
+(`DATABASE_PATH=/data/dev-team-hub.db`), así que sobrevive a `restart`,
+`up --build` y borrado del contenedor. Backup = copiar ese archivo
+(`docker run --rm -v dth-data:/data alpine cat /data/dev-team-hub.db > backup.db`
+con la app parada, o usar `.backup` de sqlite3 en caliente).
 
-Cuando entre la base de datos, `docker-compose.yml` tiene comentado el bloque
-para las dos opciones (volumen para SQLite, o servicio MySQL al lado).
+`better-sqlite3` es un módulo nativo sin prebuilds para musl: por eso las
+etapas de build del Dockerfile instalan `python3 make g++` (la imagen final no
+los carga).
 
 ## Actualizar
 
@@ -96,5 +99,5 @@ para las dos opciones (volumen para SQLite, o servicio MySQL al lado).
 docker compose up -d --build
 ```
 
-Reconstruye y reemplaza el contenedor. Como no hay estado persistido, no hay
-migración que correr — por ahora.
+Reconstruye y reemplaza el contenedor; la base queda en el volumen. No hay
+migraciones formales todavía: el esquema es clave→JSON y se crea solo.

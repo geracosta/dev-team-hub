@@ -4,6 +4,11 @@ dist/
 *.log
 .DS_Store
 
+# Base SQLite local (y sus archivos WAL).
+*.db
+*.db-shm
+*.db-wal
+
 # Datos internos del despliegue propio: no se versionan.
 server/roster.json
 docs/INTERNO.md

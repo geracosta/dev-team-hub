@@ -6,8 +6,11 @@
 
 # ---------------------------------------------------------------------------
 # Dependencias de producción del server (sin tsx ni typescript).
+# better-sqlite3 es nativo y no trae prebuilds para musl: en alpine compila
+# desde el fuente, de ahí el toolchain. Sólo vive en las etapas de build.
 # ---------------------------------------------------------------------------
 FROM node:22-alpine AS server-deps
+RUN apk add --no-cache python3 make g++
 WORKDIR /app/server
 COPY server/package.json server/package-lock.json ./
 RUN npm ci --omit=dev
@@ -16,6 +19,7 @@ RUN npm ci --omit=dev
 # Compilación del server (necesita las devDependencies).
 # ---------------------------------------------------------------------------
 FROM node:22-alpine AS server-build
+RUN apk add --no-cache python3 make g++
 WORKDIR /app/server
 COPY server/package.json server/package-lock.json ./
 RUN npm ci
@@ -59,6 +63,11 @@ COPY server/roster*.json ./
 COPY --from=server-deps  /app/server/node_modules ./node_modules
 COPY --from=server-build /app/server/dist         ./dist
 COPY --from=client-build /app/client/dist         /app/client/dist
+
+# La base SQLite vive en /data (montado como volumen por docker-compose, con
+# DATABASE_PATH apuntando adentro). El chown importa: el volumen hereda el
+# dueño del directorio de la imagen y el proceso corre como `node`.
+RUN mkdir -p /data && chown node:node /data
 
 USER node
 EXPOSE 4000

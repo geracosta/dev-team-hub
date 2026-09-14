@@ -147,6 +147,7 @@ router.post('/today/randomize', requireAuth, requireFacilitator, (req, res) => {
   // facilitatorId ya viene de la rotación; no lo sobreescribimos con quien
   // apretó el botón (puede ser un lead cubriendo al facilitador del día).
   session.status = 'running';
+  dailySessions.set(session.date, session); // persistir la mutación
   res.json({ session });
 });
 
@@ -158,6 +159,7 @@ router.post('/today/advance', requireAuth, requireFacilitator, (_req, res) => {
   } else {
     session.status = 'closed';
   }
+  dailySessions.set(session.date, session); // persistir la mutación
   res.json({ session });
 });
 

@@ -14,8 +14,8 @@
                                     └──────┬───────┘                └──────────────┘
                                            │
                                     ┌──────▼───────┐
-                                    │  Datastore   │  En el scaffold: en memoria.
-                                    │              │  Producción: Postgres/SQLite.
+                                    │  Datastore   │  SQLite embebido
+                                    │              │  (better-sqlite3, ver db.ts)
                                     └──────────────┘
 ```
 
@@ -25,10 +25,10 @@
 |-----------------|-----------------------------------|--------|
 | Front/back      | Repos separados (`client`/`server`) en un monorepo | Pedido del equipo; deploy independiente. |
 | Lenguaje        | TypeScript en ambos                | Tipos compartidos para los DTOs, menos bugs de integración. |
-| Auth            | JWT + roles (`developer`,`lead`)   | Simple, stateless; migrable a SSO/LDAP corporativo. |
+| Auth            | OAuth2 contra Gitea + JWT propio con roles (`developer`,`lead`) | La identidad ya vive en Gitea (2FA incluido); el rol lo da el roster. Modo demo opcional para correr sin nada. |
 | Fuente PRs      | Gitea API                          | El git del equipo es un Gitea autohosteado. |
 | Comentarios     | Jira API                           | La daily ya documenta tickets/subtareas en Jira. |
-| Datos           | Store en memoria + mock            | Permite correr sin credenciales; se reemplaza por DB real. |
+| Datos           | SQLite embebido (clave→JSON espejado en Maps) + mock | Persistencia sin server de DB aparte; los Maps mantienen simple el resto del código. |
 | Ingest de PRs   | Por repo, cacheado en un snapshot  | Gitea no filtra PRs por autor arbitrario; una sync sirve a todo el equipo. |
 | Escrituras Jira | Flag propio (`JIRA_WRITE_ENABLED`) | Comentar e imputar horas toca tickets reales del equipo: opt-in aparte de la lectura. |
 

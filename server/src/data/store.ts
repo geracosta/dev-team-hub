@@ -1,6 +1,7 @@
 import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { PersistentMap } from './db.js';
 import type {
   User,
   DailySession,
@@ -9,8 +10,8 @@ import type {
 } from '../types.js';
 
 /**
- * Store en memoria para el scaffold. Se reinicia con el server.
- * En producción esto pasa a una base de datos (ver docs/ROADMAP.md).
+ * Store de la app: Maps en memoria espejados a SQLite (ver db.ts), así los
+ * datos sobreviven a los reinicios sin cambiar la forma de usarlos.
  *
  * El roster del equipo vive en un JSON fuera del código: `roster.json` en la
  * raíz del server (gitignoreado, para no versionar datos de personas reales) o
@@ -78,6 +79,37 @@ export const users: User[] = roster.people.map((seed, i) => ({
   active: true,
 }));
 
+/**
+ * Overrides de identidad hechos en runtime desde la pantalla de mapeo
+ * (login de Gitea corregido, accountId de Jira confirmado). Persisten aparte
+ * del roster y le ganan: el roster siembra, el mapeo confirmado manda.
+ * Clave: email, que es lo más estable ante cambios de login.
+ */
+interface IdentityOverride {
+  giteaLogin?: string;
+  jiraAccountId?: string;
+  jiraMatch?: User['jiraMatch'];
+}
+
+const identityOverrides = new PersistentMap<IdentityOverride>('user_identities');
+
+for (const [email, ident] of identityOverrides) {
+  const user = users.find((u) => u.email.toLowerCase() === email.toLowerCase());
+  if (!user) continue;
+  if (ident.giteaLogin) user.giteaLogin = ident.giteaLogin;
+  if ('jiraAccountId' in ident) user.jiraAccountId = ident.jiraAccountId;
+  if (ident.jiraMatch) user.jiraMatch = ident.jiraMatch;
+}
+
+/** Llamar después de mutar la identidad de un user (ver services/mapping.ts). */
+export const persistIdentity = (user: User): void => {
+  identityOverrides.set(user.email, {
+    giteaLogin: user.giteaLogin,
+    jiraAccountId: user.jiraAccountId,
+    jiraMatch: user.jiraMatch,
+  });
+};
+
 export const findUserByEmail = (email: string) =>
   users.find((u) => u.email.toLowerCase() === email.toLowerCase());
 
@@ -98,23 +130,28 @@ export const rotationRoster = () =>
   users.filter((u) => u.active !== false).sort((a, b) => a.id.localeCompare(b.id));
 
 // Sesiones de daily indexadas por fecha (YYYY-MM-DD).
-export const dailySessions = new Map<string, DailySession>();
+export const dailySessions = new PersistentMap<DailySession>('daily_sessions');
 // Entries indexadas por id.
-export const dailyEntries = new Map<string, DailyEntry>();
+export const dailyEntries = new PersistentMap<DailyEntry>('daily_entries');
 
 export const entriesForSession = (sessionId: string) =>
   [...dailyEntries.values()].filter((e) => e.sessionId === sessionId);
 
 // Calendario del equipo: vacaciones, licencias, feriados y reuniones.
-export const calendarEvents = new Map<string, CalendarEvent>();
+export const calendarEvents = new PersistentMap<CalendarEvent>('calendar_events');
 
 /** Cambios manuales de facilitador: fecha (YYYY-MM-DD) -> userId. */
-export const facilitatorOverrides = new Map<string, string>();
+export const facilitatorOverrides = new PersistentMap<string>(
+  'facilitator_overrides',
+);
 
 // Overrides sembrados desde el roster (p. ej. huecos al migrar de un proceso
-// anterior). Van en el JSON porque el store todavía es en memoria y si no se
-// perderían en cada reinicio; con persistencia (Entrega 3) se cargan una vez.
+// anterior). Sólo siembran fechas que la base no conoce, para no pisar cambios
+// hechos desde el calendario. Contracara: un override borrado desde la UI
+// vuelve en el próximo arranque si sigue en el roster — para sacarlo en serio,
+// sacarlo del roster.json.
 for (const [date, login] of Object.entries(roster.facilitatorOverrides ?? {})) {
+  if (facilitatorOverrides.has(date)) continue;
   const user = findUserByGiteaLogin(login);
   if (user) facilitatorOverrides.set(date, user.id);
   else console.warn(`[roster] override ${date}: login desconocido "${login}"`);

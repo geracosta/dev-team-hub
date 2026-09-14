@@ -4,6 +4,9 @@
 **/dist
 **/.env
 **/*.log
+**/*.db
+**/*.db-shm
+**/*.db-wal
 
 .git
 .gitignore

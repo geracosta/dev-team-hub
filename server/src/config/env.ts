@@ -15,11 +15,18 @@ const num = (value: string | undefined, fallback: number): number => {
 
 const trimSlash = (url: string) => url.replace(/\/+$/, '');
 
+const port = num(process.env.PORT, 4000);
+
 export const env = {
-  port: num(process.env.PORT, 4000),
+  port,
   jwtSecret: process.env.JWT_SECRET ?? 'dev-secret-change-me',
   clientOrigin: process.env.CLIENT_ORIGIN ?? 'http://localhost:5173',
-  /** Cuentas de ejemplo con password compartida. Apagar al pasar a SSO/LDAP. */
+  /**
+   * URL pública del server (sin barra final): es la base del redirect_uri de
+   * OAuth, tiene que coincidir con la registrada en la app OAuth2 de Gitea.
+   */
+  publicUrl: trimSlash(process.env.PUBLIC_URL ?? `http://localhost:${port}`),
+  /** Cuentas de ejemplo con password compartida. Apagar al pasar al login real. */
   authDemoMode: process.env.AUTH_DEMO_MODE !== 'false',
   daily: {
     /**
@@ -48,6 +55,14 @@ export const env = {
     enabled: process.env.GITEA_ENABLED === 'true',
     baseUrl: trimSlash(process.env.GITEA_BASE_URL ?? ''),
     token: process.env.GITEA_TOKEN ?? '',
+    /**
+     * App OAuth2 registrada en Gitea (Configuración → Aplicaciones) para el
+     * login real: redirect_uri = <PUBLIC_URL>/api/auth/gitea/callback.
+     * Independiente del token: el login funciona aunque las métricas no estén
+     * configuradas, y al revés.
+     */
+    oauthClientId: process.env.GITEA_OAUTH_CLIENT_ID ?? '',
+    oauthClientSecret: process.env.GITEA_OAUTH_CLIENT_SECRET ?? '',
     /** Si hay orgs, se descubren sus repos y se ignora la lista fija. */
     orgs: csv(process.env.GITEA_ORGS),
     /** Lista `owner/repo` a analizar. Obligatoria salvo que haya GITEA_ORGS. */
@@ -89,6 +104,11 @@ export const giteaConfigured = () =>
     env.gitea.token &&
       env.gitea.baseUrl &&
       (env.gitea.repos.length || env.gitea.orgs.length),
+  );
+/** Login real contra Gitea: requiere la app OAuth2 registrada. */
+export const giteaOauthEnabled = () =>
+  Boolean(
+    env.gitea.baseUrl && env.gitea.oauthClientId && env.gitea.oauthClientSecret,
   );
 /**
  * True solo con opt-in explícito (GITEA_ENABLED=true) y token presente.
